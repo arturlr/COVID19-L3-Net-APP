@@ -5,7 +5,7 @@ Description: EC2 Auto Scaling group using EC2 Spot Instances, automatically scal
 Mappings:
   CidrMappings:
     vpc:
-      CIDR: 172.17.0.0/16  
+      CIDR: 172.18.0.0/16  
    
 Metadata:
   Author:
@@ -24,6 +24,8 @@ Metadata:
 
 Parameters:
   s3Bucket:
+    Type: String
+  gitHubRepo:
     Type: String
   Ec2KeyName:
     Type: AWS::EC2::KeyPair::KeyName
@@ -421,7 +423,7 @@ Resources:
               - |-
                 #!/bin/bash -xe
                 yum -y install git
-                cd /root && git clone https://github.com/UBC-CIC/COVID19-L3-Net-APP.git
+                cd /root && git clone ${gitHub}.git
                 bash /root/sqs-ec2-spot-asg/user-data.sh ${sqsUrl} ${logGroup} ${cloudfrontDomain}
               - cloudfrontDomain: 
                   Fn::GetAtt:
@@ -429,6 +431,7 @@ Resources:
                   - DomainName
                 sqsUrl: !Ref sqsQueue
                 logGroup: !Ref cloudWatchLogsGroup
+                gitHub: !Ref gitHubRepo
                   
   publicRoute:
     Type: AWS::EC2::Route
