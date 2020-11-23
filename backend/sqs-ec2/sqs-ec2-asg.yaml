@@ -423,6 +423,12 @@ Resources:
               - |-
                 #!/bin/bash -xe
                 yum -y install git
+                # adding SSM agent
+                cd /tmp
+                sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+                sudo systemctl enable amazon-ssm-agent
+                sudo systemctl start amazon-ssm-agent
+                # Running SQS userdata
                 cd /root && git clone ${gitHub}.git
                 bash /root/sqs-ec2-spot-asg/user-data.sh ${sqsUrl} ${logGroup} ${cloudfrontDomain}
               - cloudfrontDomain: 
