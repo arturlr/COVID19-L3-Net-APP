@@ -30,11 +30,11 @@ In this step we will use the Amplify console to deploy and build the front-end a
 # Step 2: Deploy the SQS and EC2 infrastructure
 In this step, we will deploy all the base back-end infrastructure to process the images as they land on S3. 
 
-:warning: Important Note: The AmazonLinuxAMI ID for the region you are deploying the cloud formation can be found by executing the following command.  Please copy the AMI ID to be used on the next steps. 
+:warning: Important Note: The AmazonLinuxAMI ID for the region you are deploying the cloud formation can be found by executing the following command.  Please copy the AMI ID to be used on the next steps. **Make sure run this command on the region you are executing the solution.**
 ```bash
 aws ec2 describe-images \
     --owners amazon \
-    --filters 'Name=name,Values=Deep Learning AMI (Amazon Linux 2) Version 30.1' 'Name=state,Values=available' \
+    --filters 'Name=name,Values=Deep Learning Base AMI (Amazon Linux 2)*' 'Name=state,Values=available' \
     --query 'reverse(sort_by(Images, &CreationDate))[:1].ImageId' \
     --output text
 ```
