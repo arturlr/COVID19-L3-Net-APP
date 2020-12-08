@@ -2,7 +2,6 @@
 INSTANCE_ID=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
 WORKING_DIR=/root/COVID19-L3-Net-APP/backend/sqs-ec2
 
-
 ACCOUNT="$(aws sts get-caller-identity --query Account --output text)"
 REGION="$(curl -s http://169.254.169.254/latest/meta-data/local-hostname | cut -d . -f 2)"
 SQSQUEUE=$1
@@ -43,9 +42,10 @@ systemctl start awslogsd
 
 REGISTRY="${ACCOUNT}.dkr.ecr.${REGION}.amazonaws.com"
 aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $REGISTRY
-docker pull ${REGISTRY}/covid-19-api:latest
-docker tag ${REGISTRY}/covid-19-api:latest covid-19-api:latest
-docker run --runtime nvidia -p 80:80 --network 'host' -d --restart always covid-19-api:latest
+docker pull ${REGISTRY}/covid-19-api:dev
+docker tag ${REGISTRY}/covid-19-api:latest covid-19-api:dev
+docker run --runtime nvidia -p 80:80 --network 'host' -d --restart always covid-19-api:dev
 
 #systemctl start spot-instance-interruption-notice-handler
+logger "$0: -------------- Starting worker"
 systemctl start worker

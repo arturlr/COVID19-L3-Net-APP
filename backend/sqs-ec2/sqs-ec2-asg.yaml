@@ -83,7 +83,7 @@ Parameters:
 
 Resources:
 
-  oai:
+  originAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties: 
       CloudFrontOriginAccessIdentityConfig:
@@ -104,7 +104,7 @@ Resources:
               OriginAccessIdentity: !Join
                 - ''
                 - - origin-access-identity/cloudfront/
-                  - !Ref oai
+                  - !Ref originAccessIdentity
         Enabled: true
         DefaultCacheBehavior:
             AllowedMethods:
@@ -121,6 +121,26 @@ Resources:
               Cookies:
                 Forward: none
             ViewerProtocolPolicy: allow-all
+
+  bucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: originAccessIdentity
+    Properties:
+      Bucket: !Ref s3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+            Resource: 
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Ref: s3Bucket
+                - /*
+            Principal:
+              CanonicalUser: !GetAtt originAccessIdentity.S3CanonicalUserId
 
   attachGateway:
     Type: AWS::EC2::VPCGatewayAttachment

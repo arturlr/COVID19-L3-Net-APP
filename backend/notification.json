@@ -2,7 +2,7 @@
     "LambdaFunctionConfigurations": [
         {
             "Id": "LambdaValidation",
-            "QueueArn": "LambdaFunctionArn",
+            "LambdaFunctionArn": "%LambdaArn%",
             "Events": [
                 "s3:ObjectCreated:*"
             ],
@@ -11,7 +11,7 @@
                   "FilterRules": [
                     {
                       "Name": "suffix",
-                      "Value": "zip"
+                      "Value": ".zip"
                     }
                   ]
                 }
