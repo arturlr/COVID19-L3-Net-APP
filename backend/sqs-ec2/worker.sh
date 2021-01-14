@@ -84,7 +84,7 @@ process_file () {
     cp $WORKING_DIR/sapien/data.js /tmp/html/$FNAME_NO_SUFFIX
     sed -i "s|%DICOM_FILES%|${DCMS%???}|g" /tmp/html/$FNAME_NO_SUFFIX/data.js
     sed -i "s|%PNG_FILES%|${PNGS%???}|g" /tmp/html/$FNAME_NO_SUFFIX/data.js
-    sed -i "s|url_statJson|${STATS%???}|g" /tmp/html/$FNAME_NO_SUFFIX/data.js
+    sed -i "s|%url_statJson%|${STATS%???}|g" /tmp/html/$FNAME_NO_SUFFIX/data.js
 
     aws s3 cp --quiet --recursive /tmp/html/$FNAME_NO_SUFFIX s3://$S3BUCKET/public/html/$FNAME_NO_SUFFIX-$FILE_DATE/
 
