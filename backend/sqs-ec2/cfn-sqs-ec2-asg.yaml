@@ -2,32 +2,15 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: EC2 Auto Scaling group using EC2 Spot Instances, automatically scaling
   based on SQS queue depth
   
-Mappings:
-  CidrMappings:
-    vpc:
-      CIDR: 172.18.0.0/16  
-   
-Metadata:
-  Author:
-    Description: Ran Sheinberg <ranshein@amazon.com>, Chad Schmutzer <schmutze@amazon.com>
-  License:
-    Description: 'Copyright 2019 Amazon.com, Inc. and its affiliates. All Rights Reserved.
-
-      Licensed under the Amazon Software License (the "License"). You may not use this file
-      except in compliance with the License. A copy of the License is located at
-
-      http://aws.amazon.com/asl/
-
-      or in the "license" file accompanying this file. This file is distributed on an "AS IS"
-      BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-      License for the specific language governing permissions and limitations under the License.'
-
 Parameters:
   s3Bucket:
     Type: String
   gitHubRepo:
     Type: String
     Default: https://github.com/UBC-CIC/COVID19-L3-Net-APP
+  gitHubBranch:
+    Default: master
+    Type: String 
   Ec2KeyName:
     Type: AWS::EC2::KeyPair::KeyName
   amazonLinuxAmi:
@@ -82,7 +65,6 @@ Parameters:
 
 
 Resources:
-
   originAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
     Properties: 
@@ -141,17 +123,6 @@ Resources:
                 - /*
             Principal:
               CanonicalUser: !GetAtt originAccessIdentity.S3CanonicalUserId
-
-  attachGateway:
-    Type: AWS::EC2::VPCGatewayAttachment
-    DependsOn:
-    - vpc
-    - internetGateway
-    Properties:
-      InternetGatewayId:
-        Ref: internetGateway
-      VpcId:
-        Ref: vpc
     
   autoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -449,8 +420,7 @@ Resources:
                 sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
                 sudo systemctl start amazon-ssm-agent || echo "Failed in starting SSM"
                 # Running SQS userdata
-                cd /root && git clone ${gitHub}.git
-                bash /root/COVID19-L3-Net-APP/backend/sqs-ec2/user-data.sh ${sqsUrl} ${logGroup} ${cloudfrontDomain}
+                bash /root/covid-19-app-${gitBranch}/backend/sqs-ec2/user-data.sh ${sqsUrl} ${logGroup} ${cloudfrontDomain} ${gitBranch}
               - cloudfrontDomain: 
                   Fn::GetAtt:
                   - cloudFront
@@ -458,106 +428,8 @@ Resources:
                 sqsUrl: !Ref sqsQueue
                 logGroup: !Ref cloudWatchLogsGroup
                 gitHub: !Ref gitHubRepo
+                gitBranch: !Ref gitHubBranch
                   
-  publicRoute:
-    Type: AWS::EC2::Route
-    DependsOn:
-    - publicRouteTable
-    - internetGateway
-    - attachGateway
-    Properties:
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId:
-        Ref: internetGateway
-      RouteTableId:
-        Ref: publicRouteTable    
-  publicRouteTable:
-    Type: AWS::EC2::RouteTable
-    DependsOn:
-    - vpc
-    - attachGateway
-    Properties:
-      Tags:
-      - Key: Name
-        Value: Public Route Table
-      VpcId:
-        Ref: vpc    
-  publicSubnet1:
-    DependsOn:
-    - attachGateway
-    Properties:
-      AvailabilityZone:
-        Fn::Select:
-        - 0
-        - Fn::GetAZs:
-            Ref: AWS::Region
-      CidrBlock:
-        Fn::Select:
-        - 0
-        - Fn::Cidr:
-          - Fn::FindInMap:
-            - CidrMappings
-            - vpc
-            - CIDR
-          - 256
-          - 8
-      MapPublicIpOnLaunch: true
-      Tags:
-      - Key: Name
-        Value:
-          Ref: AWS::StackName
-      VpcId:
-        Ref: vpc
-    Type: AWS::EC2::Subnet
-  publicSubnet1RouteTableAssociation:
-    DependsOn:
-    - publicRouteTable
-    - publicSubnet1
-    - attachGateway
-    Properties:
-      RouteTableId:
-        Ref: publicRouteTable
-      SubnetId:
-        Ref: publicSubnet1
-    Type: AWS::EC2::SubnetRouteTableAssociation
-  publicSubnet2:
-    DependsOn:
-    - attachGateway
-    Properties:
-      AvailabilityZone:
-        Fn::Select:
-        - 1
-        - Fn::GetAZs:
-            Ref: AWS::Region
-      CidrBlock:
-        Fn::Select:
-        - 1
-        - Fn::Cidr:
-          - Fn::FindInMap:
-            - CidrMappings
-            - vpc
-            - CIDR
-          - 256
-          - 8
-      MapPublicIpOnLaunch: true
-      Tags:
-      - Key: Name
-        Value:
-          Ref: AWS::StackName
-      VpcId:
-        Ref: vpc
-    Type: AWS::EC2::Subnet
-  publicSubnet2RouteTableAssociation:
-    DependsOn:
-    - publicRouteTable
-    - publicSubnet2
-    - attachGateway
-    Properties:
-      RouteTableId:
-        Ref: publicRouteTable
-      SubnetId:
-        Ref: publicSubnet2
-    Type: AWS::EC2::SubnetRouteTableAssociation
   sqsQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -579,45 +451,19 @@ Resources:
       Queues:
       - Ref: sqsQueue
           
-  vpc:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock:
-        Fn::FindInMap:
-        - CidrMappings
-        - vpc
-        - CIDR
-      EnableDnsHostnames: true
-      EnableDnsSupport: true
-      Tags:
-      - Key: Name
-        Value:
-          Ref: AWS::StackName
-
-
 Outputs:
   awsRegionId:
     Description: The AWS Region ID your template was launched in
     Value:
       Ref: AWS::Region
-  publicSubnet1:
-    Description: Public subnet 1
-    Value:
-      Ref: publicSubnet1
-  publicSubnet2:
-    Description: Public subnet 2
-    Value:
-      Ref: publicSubnet2
+
   sqsQueueName:
     Description: The SQS queue ARN
     Value:
       Fn::GetAtt:
       - sqsQueue
       - QueueName
-  vpc:
-    Description: The VPC
-    Value:
-      Ref: vpc
+
   cloudFrontDomain:
     Value:
       Fn::GetAtt:
