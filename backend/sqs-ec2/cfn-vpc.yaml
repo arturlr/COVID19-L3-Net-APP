@@ -7,10 +7,6 @@ Mappings:
     vpc:
       CIDR: 172.18.0.0/16  
    
-Parameters:
-  Environment:
-    Type: String 
-  
 Resources:
   attachGateway:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -152,6 +148,7 @@ Resources:
       Type: AWS::EC2::SecurityGroup
       Properties:
         GroupName: security-group
+        GroupDescription: Default Security Group for covid-19 app
         VpcId: !Ref vpc
   
   #adding this to avoid circular dependency
@@ -178,7 +175,7 @@ Resources:
       Value: !Ref SecurityGroup
       Description: SecurityGroup
 
-  SubNet1Parameter:
+  Subnet1Parameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: /covid19l3/subnet1
@@ -186,7 +183,7 @@ Resources:
       Value: !Ref publicSubnet1
       Description: Public Subnet1
 
-  SubNet1Parameter:
+  Subnet2Parameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: /covid19l3/subnet2
