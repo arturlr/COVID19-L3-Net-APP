@@ -160,7 +160,6 @@ Resources:
                       commands:
                         - cd /root && git clone ${gitHub}.git covid-19-app-${gitBranch} --branch ${gitBranch}
                         - cd covid-19-app-${gitBranch}/backend/sqs-ec2
-                        - 'CONTAINER_TAG={{ build.getimagename.outputs.stdout }}'
                         - cp -av ./spot-instance-interruption-notice-handler.service /etc/systemd/system/spot-instance-interruption-notice-handler.service
                         - cp -av ./worker.service /etc/systemd/system/worker.service
                         - cp -av ./spot-instance-interruption-notice-handler.sh /usr/local/bin/
@@ -172,6 +171,7 @@ Resources:
                     action: ExecuteBash
                     inputs:
                       commands:          
+                        - 'CONTAINER_TAG={{ build.getimagename.outputs.stdout }}'
                         - docker pull public.ecr.aws/k1w5m7b3/covid-19-api:$CONTAINER_TAG
                         - docker tag  public.ecr.aws/k1w5m7b3/covid-19-api:$CONTAINER_TAG covid-19-api:$CONTAINER_TAG
           - gitHub: !Ref gitHubRepo
