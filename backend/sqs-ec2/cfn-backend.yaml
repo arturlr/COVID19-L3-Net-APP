@@ -134,19 +134,16 @@ Resources:
             phases:
               - name: initialization
                 steps:
-                  - name: GitHubClone
+                  - name: AgentsDownload
                     action: ExecuteBash
                     inputs:
                       commands:
-                        - yum -y install git awslogs jq imagemagick            
-                        - cd /tmp
-                        - sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm                      
-                        - sudo systemctl start amazon-ssm-agent || echo "Failed in starting SSM"
-                        
+                        - yum -y install git awslogs jq imagemagick                                    
+                        - sudo yum install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm                        
 
               - name: build
                 steps:
-                  - name: ImageName
+                  - name: GetImageName
                     action: ExecuteBash
                     inputs:
                       commands:
@@ -157,7 +154,7 @@ Resources:
                             echo "covid-19-api:${gitBranch}"
                           fi
 
-                  - name: ModelBuild
+                  - name: RepoClone
                     action: ExecuteBash
                     inputs:
                       commands:
@@ -170,6 +167,11 @@ Resources:
                         - cp -av ./worker.sh /usr/local/bin
                         - chmod +x /usr/local/bin/spot-instance-interruption-notice-handler.sh
                         - chmod +x /usr/local/bin/worker.sh           
+
+                  - name: DockerPull
+                    action: ExecuteBash
+                    inputs:
+                      commands:          
                         - docker pull public.ecr.aws/k1w5m7b3/$CONTAINER_IMAGE
                         - docker tag public.ecr.aws/k1w5m7b3/$CONTAINER_IMAGE $CONTAINER_IMAGE
           - gitHub: !Ref gitHubRepo

@@ -31,13 +31,13 @@ sed -i "s|%SQSQUEUE%|$SQSQUEUE|g" /usr/local/bin/worker.sh
 sed -i "s|%WORKING_DIR%|$WORKING_DIR|g" /usr/local/bin/worker.sh
 sed -i "s|%CLOUDFRONT%|$CLOUDFRONT|g" /usr/local/bin/worker.sh
 
-if [[ "$GITBRANCH" == "master" ]]; then
+if [[ "${GITBRANCH}" == "master" ]]; then
    IMAGE_NAME="covid-19-api:latest"
 else
-   IMAGE_NAME="covid-19-api:${$GITBRANCH}"
+   IMAGE_NAME="covid-19-api:${GITBRANCH}"
 fi
 
-docker run --runtime nvidia -p 80:80 --network 'host' -d --restart always IMAGE_NAME
+docker run --runtime nvidia -p 80:80 --network 'host' -d --restart always $IMAGE_NAME
 
 #systemctl start spot-instance-interruption-notice-handler
 logger "$0: -------------- Starting worker"
