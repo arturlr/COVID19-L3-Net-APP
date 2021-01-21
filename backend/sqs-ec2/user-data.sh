@@ -32,12 +32,12 @@ sed -i "s|%WORKING_DIR%|$WORKING_DIR|g" /usr/local/bin/worker.sh
 sed -i "s|%CLOUDFRONT%|$CLOUDFRONT|g" /usr/local/bin/worker.sh
 
 if [[ "${GITBRANCH}" == "master" ]]; then
-   IMAGE_NAME="covid-19-api:latest"
+   IMAGE_TAG="latest"
 else
-   IMAGE_NAME="covid-19-api:${GITBRANCH}"
+   IMAGE_TAG="${GITBRANCH}"
 fi
 
-docker run --runtime nvidia -p 80:80 --network 'host' -d --restart always $IMAGE_NAME
+docker run --runtime nvidia -p 80:80 --network 'host' -d --restart always covid-19-api:${IMAGE_TAG}
 
 #systemctl start spot-instance-interruption-notice-handler
 logger "$0: -------------- Starting worker"

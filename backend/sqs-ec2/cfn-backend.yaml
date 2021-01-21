@@ -66,7 +66,7 @@ Resources:
   ImageBuilderLogBucket:
     Type: AWS::S3::Bucket
 
-  InstanceRole:
+  ImageBuilderInstanceRole:
     Type: AWS::IAM::Role
     Metadata:
       Comment: Role to be used by instance during image build.
@@ -92,7 +92,7 @@ Resources:
     Properties:
       PolicyName: ImageBuilderLogBucketPolicy
       Roles:
-        - Ref: InstanceRole
+        - Ref: ImageBuilderInstanceRole
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -104,12 +104,12 @@ Resources:
                   - arn:${AWS::Partition}:s3:::${BUCKET}/*
                   - BUCKET:
                       Ref: ImageBuilderLogBucket
-  InstanceProfile:
+  ImageBuilderInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /executionServiceEC2Role/
       Roles:
-        - Ref: InstanceRole
+        - Ref: ImageBuilderInstanceRole
 
   ContainerBuildComponent:
     Type: 'AWS::ImageBuilder::Component'
@@ -143,24 +143,24 @@ Resources:
 
               - name: build
                 steps:
-                  - name: GetImageName
+                  - name: getimagename
                     action: ExecuteBash
                     inputs:
                       commands:
                         - |
                           if [[ "${gitBranch}" == "master" ]]; then
-                            echo "covid-19-api:latest"
+                            echo "latest"
                           else
-                            echo "covid-19-api:${gitBranch}"
+                            echo "${gitBranch}"
                           fi
 
-                  - name: RepoClone
+                  - name: repoclone
                     action: ExecuteBash
                     inputs:
                       commands:
                         - cd /root && git clone ${gitHub}.git covid-19-app-${gitBranch} --branch ${gitBranch}
                         - cd covid-19-app-${gitBranch}/backend/sqs-ec2
-                        - 'CONTAINER_IMAGE={{ build.ImageName.outputs.stdout }}'
+                        - 'CONTAINER_TAG={{ build.getimagename.outputs.stdout }}'
                         - cp -av ./spot-instance-interruption-notice-handler.service /etc/systemd/system/spot-instance-interruption-notice-handler.service
                         - cp -av ./worker.service /etc/systemd/system/worker.service
                         - cp -av ./spot-instance-interruption-notice-handler.sh /usr/local/bin/
@@ -168,12 +168,12 @@ Resources:
                         - chmod +x /usr/local/bin/spot-instance-interruption-notice-handler.sh
                         - chmod +x /usr/local/bin/worker.sh           
 
-                  - name: DockerPull
+                  - name: dockerpull
                     action: ExecuteBash
                     inputs:
                       commands:          
-                        - docker pull public.ecr.aws/k1w5m7b3/$CONTAINER_IMAGE
-                        - docker tag public.ecr.aws/k1w5m7b3/$CONTAINER_IMAGE $CONTAINER_IMAGE
+                        - docker pull public.ecr.aws/k1w5m7b3/covid-19-api:$CONTAINER_TAG
+                        - docker tag  public.ecr.aws/k1w5m7b3/covid-19-api:$CONTAINER_TAG covid-19-api:$CONTAINER_TAG
           - gitHub: !Ref gitHubRepo
             gitBranch: !Ref gitHubBranch
 
@@ -201,7 +201,7 @@ Resources:
           - - 'Covid19-Infrastructure-'
             - !Ref gitHubBranch
       InstanceProfileName:
-        Ref: InstanceProfile
+        Ref: ImageBuilderInstanceProfile
       # Set of one or more instance types to use when building the instance. Image Builder will select a type
       # based on availability.
       InstanceTypes:
